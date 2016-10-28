@@ -1,0 +1,18 @@
+#include "buildtowerTwoicon.h"
+#include "game.h"
+
+extern Game * game;
+
+BuildTowerTwoIcon::BuildTowerTwoIcon(QGraphicsItem *parent) : QGraphicsPixmapItem(parent)
+{
+    setPixmap (QPixmap(":image/towerTwo.jpg"));
+}
+
+void BuildTowerTwoIcon::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (!game->building)
+    {
+        game->building = new Tower();
+        game->setCursor (QString(":image/towerTwo.jpg"));
+    }
+}
