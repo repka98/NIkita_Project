@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>texturepage</title>
+	<meta http-equiv="content-type" content="text/html, charset=ISO-8859-1">
+	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
+	<style type="text/css">
+		body{
+			background-color: #000000;
+			overflow: hidden;
+			font-family: monospace;
+			color: white;
+		}
+	</style>
+
+	<script src="../resources/three.js"></script>
+	<script src="../resources/Detector.js"></script>
+	<script src="../resources/CanvasRenderer.js"></script>
+	<script src="../resources/Projector.js"></script>
+</head>
+<body>
+
+	<div id="overlaytext" style="position: absolute; top: 10px; left: 10px">
+	'F': Loop through thr three trxture filters( only for WebGL renderer)<br/>
+	'L': Toggle light (only for WebGL renderer)<br/>
+	'B': Togglr blending<br/>
+	Cursor left / right: control y rotation speed<br/>
+	Cursor up / down: Movealong z axis<br/>
+	Renderer:
+	</div>
+
+	<div id="WebGLCanvas">
+		<script>
+			var scene;
+			var camera;
+			var xRotation = 0.0;
+			var yRotation = 0.0;
+			var xSpeed = 0.0;
+			var ySpeed = 0.0;
+			var zTranslation = 0.0;
+			var glassTexture;
+			var textureFilter = 0;
+			var lightIsOn = true;
+			var blendingIsOn = true;
+			var boxMesh;
+			initializeScene();
+			animateScene();
+
+
+			function initializeScene(){
+				webGLAvaliable = false;
+				if (Detector.webgl){
+					renderer = new THREE.WebGLRenderer({antialias:true});
+					webGLAvaliable = true;
+					document.getElementById("overlaytext").innerHTML += "WebGL Renderer";
+				}else {
+					renderer = new THREE.CanvasRenderer();
+					document.getElementById("overlaytext").innerHTML += "Canvas Renderer";
+				}
+
+				renderer.setClearColor(0x000000, 1);
+
+				canvasWidth = window.innerWidth - 10;
+				canvasHeight = window.innerHeight - 20;
+
+				renderer.setSize(canvasWidth, canvasHeight);
+
+				document.getElementById("WebGLCanvas").appendChild(renderer.domElement);
+
+				scene = new THREE.Scene();
+
+				camera = new THREE.PerspectiveCamera(45, canvasWidth / canvasHeight, 1 , 100);
+				camera.position.set(0, 0, 6);
+				camera.lookAt(scene.position);
+				scene.add(camera);
+
+				var boxGeometry = new THREE.BoxGeometry(2.0, 2.0, 2.0);
+
+				glassTexture = new THREE.ImageUtils.loadTexture("../resources/images/nehe.jpg");
+
+				var boxMaterial = new THREE.MeshLambertMaterial({
+					map:glassTexture,
+					depthWrite: false,
+					transparent: true,
+					opacity: 0.5,
+					side: THREE.DoubleSide,
+					combine: THREE.MixOperation
+				});
+				if (!webGLAvaliable){
+					boxMaterial = new THREE.MeshBasicMaterial({
+						map: glassTexture,
+						transparent: true,
+						opacity: 0.5,
+						side: THREE.DoubleSide
+					});
+				}
+
+				boxMesh = new THREE.Mesh(boxGeometry, boxMaterial);
+				boxMesh.position.set(0.0, 0.0, zTranslation);
+				scene.add(boxMesh);
+
+				var ambientLight = new THREE.AmbientLight(0x101010, 1.0);
+				scene.add(ambientLight);
+
+				var directionalLigth = new THREE.DirectionalLight(0xffffff, 1.0);
+				directionalLigth.position.set(camera.position.x, camera.position.y, camera.position.z);
+				scene.add(directionalLigth);
+
+				document.addEventListener("keydown", onDocumentKeyDown, false);
+			}
+
+			function onDocumentKeyDown(event){
+				var keyCode = event.which;
+
+				if(keyCode == 70){
+					switch(textureFilter){
+						case 0:
+						glassTexture.minFilter = THREE.NearestFilter;
+						glassTexture.magFilter = THREE.NearestFilter;
+						textureFilter = 1;
+						break;
+						case 1:
+						glassTexture.minFilter = THREE.LinearFilter;
+						glassTexture.magFilter = THREE.LinearFilter;
+						textureFilter = 2;
+						break;
+						case 2:
+						glassTexture.minFilter = THREE.LinearFilter;
+						glassTexture.magFilter = THREE.LinearMipMapNearestFilter;
+						textureFilter = 0;
+						break;
+					};
+					glassTexture.needsUpdate = true;
+				}else if(keyCode == 76){
+					if (lightIsOn){
+						boxMesh.material= new THREE.MeshBasicMaterial({map:glassTexture});
+						boxMesh.material.side = THREE.DoubleSide;
+						if(blendingIsOn){
+							boxMesh.material.depthWrite = false;
+							boxMesh.material.transparent = true;
+							boxMesh.material.opacity = 0.5;
+							boxMesh.material.combine = THREE.MixOperation;
+						}else {
+							boxMesh.material.depthWrite = true;
+							boxMesh.material.opacity = 1.0;
+							boxMesh.material.combine = THREE.MultiplyOperation;
+						}
+						lightIsOn = false;
+					}else {
+						boxMesh.material = new THREE.MeshLambertMaterial({map:glassTexture});
+						if(!webGLAvaliable){
+							boxMesh.material = new THREE.MeshBasicMaterial({map:glassTexture});
+						}
+						boxMesh.material.side = THREE.DoubleSide;
+						if(blendingIsOn){
+							boxMesh.material.depthWrite = false;
+							boxMesh.material.transparent = true;
+							boxMesh.material.opacity = 0.5;
+							boxMesh.material.combine = THREE.MixOperation;
+						}else {
+							boxMesh.material.depthWrite = false;
+							boxMesh.material.opacity = 1.0;
+							boxMesh.material.combine = THREE.MultiplyOperation;
+						}
+						ligthIsOn = true;
+					}
+					boxMesh.material.needsUpdate = true;
+				}else if(keyCode == 66){
+					if(blendingIsOn){
+						boxMesh.material.depthWrite = true;
+						boxMesh.material.opacirt = 1.0;
+						boxMesh.material.combine = THREE.MultiplyOperation;
+						blendingIsOn = false;
+					}else {
+						boxMesh.material.depthWrite = false;
+						boxMesh.material.transparent = true;
+						boxMesh.material.opacity = 0.5;
+						boxMesh.material.combine = THREE.MixOperation;
+						blendingIsOn = true;
+					}
+					boxMesh.material.needsUpdate = true;
+				}else if(keyCode == 38){
+					xSpeed -= 0.01;
+				}else if(keyCode == 40){
+					xSpeed += 0.01;
+				}else if(keyCode == 37){
+					ySpeed -= 0.01;
+				}else if(keyCode == 39){
+					ySpeed += 0.01;
+				}else if(keyCode == 33){
+					zTranslation -= 0.2;
+				}else if(keyCode == 34){
+					zTranslation += 0.2;
+				}
+			}
+
+			function animateScene(){
+				xRotation += xSpeed;
+				yRotation += ySpeed;
+				boxMesh.rotation.set(xRotation, yRotation, 0.0);
+				boxMesh.position.z = zTranslation;
+				requestAnimationFrame(animateScene);
+				renderScene();
+			}
+
+			function renderScene(){
+				renderer.render(scene, camera);
+			}
+
+		</script>
+	</div>
+
+</body>
+</html>
