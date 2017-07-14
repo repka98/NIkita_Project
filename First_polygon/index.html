@@ -1,0 +1,266 @@
+<html>
+	<head>
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+
+			.black-overlay {
+				display: none;
+				position: absolute;
+				top: 0;
+				left: 0%;
+				width: 100%;
+				height: 100%;
+				background-color: black;
+				z-index: 1001;
+				opacity: .80; 
+			}
+
+			.white-content {
+				display: none;
+				position: absolute;
+				top: 25%;
+				left: 25%;
+				height: 70px;
+				width: 50%;
+				padding: 16px;
+				border: 2px solid grey;
+				background-color: black;
+				z-index: 1002;
+			}
+
+			.big-message {
+				width: 80%;
+				height: auto;
+				margin: 0 auto;
+				padding: 5px;
+				text-align: center;
+				color: white;
+
+				font-family: serif;
+				font-size: 20px; 
+			}
+
+            #holder {border: 10px dashed #ccc;
+                    width: 150px;
+                    height: 150px;
+                    margin: 20px auto;}
+                    #holder.hover {border: 10px dashed #333; #333}
+		</style>
+	</head>
+	<body>
+
+		<div id="lightbox" class="white-content">
+			<div class="big-message" id="message"></div>
+			<a href="javascript:void(0)" onclick="hideLigthbox()">Close</a>
+		</div>
+		<div id="fade" class="black-overlay"></div>
+		<script src="three.js"></script>
+		<script src="Detector.js"></script>
+		<script src="stats.min.js"></script>
+		<script src="dat.gui.min.js"></script>
+		<script>
+
+		var renderer;
+    	var scene;
+    	var camera;
+    	var stats;
+    	var control;
+
+    function init() {
+
+        // create a scene, that will hold all our elements such as objects, cameras and lights.
+        scene = new THREE.Scene();
+
+        // create a camera, which defines where we're looking at.
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        // create a render, sets the background color and the size
+        renderer = new THREE.WebGLRenderer();
+        renderer.setClearColor(0x000000, 1.0);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // create a cube and add to scene
+        var cubeGeometry = new THREE.BoxGeometry(10 * Math.random(), 10 * Math.random(), 10 * Math.random());
+        var cubeMaterial = new THREE.MeshNormalMaterial();
+        var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.name = 'cube';
+        scene.add(cube);
+
+        // position and point the camera to the center of the scene
+        camera.position.x = 15;
+        camera.position.y = 16;
+        camera.position.z = 13;
+        camera.lookAt(scene.position);
+
+        stats = createStats();
+        document.body.appendChild(stats.domElement);
+
+        // add the output of the renderer to the html element
+        document.body.appendChild(renderer.domElement);
+
+        control = new function() {
+        	this.rotationSpeed = 0.005;
+        	this.scale = 1;
+        };
+        addControls(control);
+
+        // call the render function
+        render();
+    }
+
+    function createStats() {
+    	var stats = new Stats();
+    	stats.setMode(0);
+
+    	stats.domElement.style.position = 'absolute';
+    	stats.domElement.style.position = '0';
+    	stats.domElement.style.position = '0';
+
+    	return stats;
+    }
+
+    function addControls(controlObject) {
+    	var gui = new dat.GUI();
+    	gui.add(controlObject, 'rotationSpeed', -0.1, 0.1);
+    	gui.add(controlObject, 'scale', 0.01, 2);
+    }
+
+    function render() {
+       	renderer.render(scene, camera);
+        scene.getObjectByName('cube').rotation.x += control.rotationSpeed;
+        scene.getObjectByName('cube').scale.set(control.scale, control.scale, control.scale);
+        requestAnimationFrame(render);
+        
+        stats.update();
+    }
+
+
+
+
+
+    function loadTexture(texture) {
+    	var texture = THREE.ImageUtils.loadTexture(textureURL, null, onLoadCallback, onErrorCallback);
+    	console.log("texture after loadTexture call", texture);
+    }
+
+
+    function setupDragDrop() {
+                    var holder = document.getElementById('holder');
+
+                    holder.ondragover = function() {
+                        this.className = 'hiver';
+                        return false;
+                    };
+
+                    holder.ondropend = function() {
+                        this.className = '';
+                        return false;
+                    };
+
+                    holder.ondrop = function(e) {
+                        this.className ='';
+                        e.preventDefault();
+
+                        var file = e.dataTranfer.files[0];
+                        var reader = new FileReader();
+
+                        reader.onload = function(event) {
+                            holder.style.background = 'url(' + event.target.result + ') no-repeat center';
+
+                            var image = document.createElement('img');
+                            image.src = event.target.result;
+                            var texture = new THREE.Texture(image);
+                            texture.needsUpdate = true;
+
+                            scene.getObjectByName('cube').material.map = texture;
+                        };
+                        render.readAsDataURL(file);
+                        return false;
+                    };
+                }
+
+
+
+   	function onLoadCallback(loaded) {
+   		if (loaded.length) {
+   			console.log("Loaded", loaded.length);
+   		}else {
+   			console.log("Loaded", loaded);
+   		}
+   	}
+
+   	function onProgressCallback(progress) {
+   		console.log("Progress", progress);
+   	}
+
+   	function onErrorCallback(error) {
+   		console.log("Error", error);
+   	}
+
+
+   	function loadModel(modelUrl) {
+   		var jsonLoader = new THREE.JSONLoader();
+   		jsonLoader.load(modelUrl, onLoadCallback, null);
+   	}
+
+
+
+
+
+    // calls the init function when the window is done loading.
+    window.onload = init;
+
+			 var hasGl = detectWebGL();
+    if (hasGl) {
+        showLightbox("WebGL is supported");
+    } else {
+        showLightbox("WebGL is not-supported");
+    }
+
+    function showLightbox(message) {
+        var lightBox = document.getElementById('light');
+        lightBox.style.display = 'block';
+
+        var fadeBox = document.getElementById('fade');
+        fadeBox.style.display = 'block'
+
+        var msg = document.getElementById('message');
+        msg.textContent = message;
+    }
+
+    function hideLightbox() {
+        var lightBox = document.getElementById('light');
+        lightBox.style.display = 'none';
+
+        var fadeBox = document.getElementById('fade');
+        fadeBox.style.display = 'none'
+    }
+
+
+    // loosely based on the http://get.webgl.org
+    function detectWebGL() {
+
+        // first create a canvas element
+        var testCanvas = document.createElement("canvas");
+        // and from that canvas get the webgl context
+        var gl = null;
+
+        // if exceptions are thrown, indicates webgl is null
+        try {
+            gl = testCanvas.getContext("webgl");
+
+        } catch (x) {
+            gl = null;
+        }
+        // if webgl is all good return true;
+        if (gl) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+		</script>
+	</body>
+</html>

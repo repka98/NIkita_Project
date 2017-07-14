@@ -1,0 +1,170 @@
+<html>
+	<head>
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+
+			.black-overlay {
+				display: none;
+				position: absolute;
+				top: 0;
+				left: 0%;
+				width: 100%;
+				height: 100%;
+				background-color: black;
+				z-index: 1001;
+				opacity: .80; 
+			}
+
+			.white-content {
+				display: none;
+				position: absolute;
+				top: 25%;
+				left: 25%;
+				height: 70px;
+				width: 50%;
+				padding: 16px;
+				border: 2px solid grey;
+				background-color: black;
+				z-index: 1002;
+			}
+
+			.big-message {
+				width: 80%;
+				height: auto;
+				margin: 0 auto;
+				padding: 5px;
+				text-align: center;
+				color: white;
+
+				font-family: serif;
+				font-size: 20px; 
+			}
+
+			#holder {border: 10px dashed #ccc;
+					width: 150px;
+					height: 150px;
+					margin: 20px auto;}
+
+			#holder.hover {border: 10px dashed #333; #333}
+		</style>
+	</head>
+	<body>
+
+		<div id="lightbox" class="white-content">
+			<div class="big-message" id="message"></div>
+			<a href="javascript:void(0)" onclick="hideLigthbox()">Close</a>
+		</div>
+		<div id="fade" class="black-overlay"></div>
+		<div id="holder"></div>
+		<script src="three.js"></script>
+		<script src="Detector.js"></script>
+		<script src="stats.min.js"></script>
+		<script src="dat.gui.min.js"></script>
+		<script>
+
+
+			var renderer;
+			var camera;
+			var scene;
+
+			var control;
+
+			function init() {
+				setupDragDrop();
+				setupScene();
+			}
+				function setupDragDrop() {
+					var holder = document.getElementById('holder');
+
+					if (typeof window.FileReader === 'undefined') {
+						console.error("Filereader not supported");
+					}
+
+					holder.ondragover = function() {
+						this.className = 'hover';
+						return false;
+					};
+
+					holder.ondropend = function() {
+						this.className = '';
+						return false;
+					};
+
+					holder.ondrop = function(e) {
+						this.className ='';
+						e.preventDefault();
+
+						var file = e.dataTransfer.files[0],
+                    reader = new FileReader();
+
+						reader.onload = function(event) {
+							console.log(event.target);
+							console.log(event);
+							holder.style.background = 'url(' + event.target.result + ') no-repeat center';
+
+							var image = document.createElement('img');
+							image.src = event.target.result;
+							var texture = new THREE.Texture(image);
+							texture.needsUpdate = true;
+
+							scene.getObjectByName('cube').material.map = texture;
+						};
+						render.readAsDataURL(file);
+						return false;
+					};
+				}
+
+				function setupScene() {
+					scene = new THREE.Scene();
+
+					camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight / 1.5), 0.1, 1000);
+
+					renderer = new THREE.WebGLRenderer();
+					renderer.setClearColor(0x000000, 1.0);
+					renderer.setSize(window.innerWidth, (window.innerHeight / 1.5));
+
+					var cubeGeometry = new THREE.BoxGeometry(10 * Math.random(), 10 * Math.random(), 10 * Math.random());
+					var cubeMaterial = new THREE.MeshBasicMaterial();
+					cubeMaterial.map = THREE.ImageUtils.loadTexture("debug.png");
+
+					var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+					cube.name = 'cube';
+					scene.add(cube);
+
+					camera.position.x = 15;
+					camera.position.y = 16;
+					camera.position.z = 13;
+					camera.lookAt(scene.position);
+
+					document.body.appendChild(renderer.domElement);
+
+					control = new function() {
+						this.rotationSpeed = 0.005;
+						this.scale = 1;
+					};
+
+					addControls(control);
+
+					render();
+				}
+
+				function addControls(controlObject) {
+					var gui = new dat.GUI();
+					gui.add(controlObject, 'rotationSpeed', -0.1, 0.1);
+					gui.add(controlObject, 'scale', 0.01, 2);
+				}
+
+				function render() {
+					renderer.render(scene, camera);
+					scene.getObjectByName('cube').rotation.x += control.rotationSpeed;
+					scene.getObjectByName('cube').scale.set(control.scale, control.scale, control.scale);
+
+					requestAnimationFrame(render);
+				}
+
+				window.onload = init;
+		</script>
+	</body>
+</html>
