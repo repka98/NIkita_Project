@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title> Tutorial 11 </title>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+
+	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1"/>
+	<link rel="stylesheet" type="text/css" href="NEHE.css"/>
+
+	<script src="resources/three.js" type="text/javascript"></script>
+	<script src="resources/Detector.js" type="text/javascript"></script>
+	<script src="resources/OrbitControls.js" type="text/javascript"></script>
+	<script src="resources/Stats.js" type="text/javascript"></script>
+	<script src="Scene.js" type="text/javascript"></script>
+
+	<script id="vertexShader" type="x-shader/x-fragment">
+
+		varying vec3 vNormal;
+		varying vec2 vUv;
+		attribute float displacement;
+		uniform float amplitude;
+
+		void main() {
+			vNormal = normal;
+			vUv = uv;
+
+			vec3 newPosition = position + normal * vec3(displacement * amplitude);
+			gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+		}
+	</script>
+
+	<script id="fragmentShader" type="x-shader/x-vertex">
+		varying vec3 vNormal;
+		varying vec2 vUv;
+		uniform sampler2D texImage;
+
+		void main() {
+			gl_FlagColor = texture2D(texImage, vUv);
+		}
+	</script>
+</head>
+<body>
+
+	<script>
+		var uniforms;
+		var texture;
+		var frameCounter = 0;
+
+		var nScene = new Scene({ axisHeight: 10, controls: true, displayStats: true});
+
+		nScene.initialize();
+		initializeDemo();
+		animateScene();
+
+
+		function initializeDemo() {
+			createMesh();
+		};
+
+		function createMesh() {
+			texture = new THREE.ImageUtils.loadtexture("resources/Tim.bmp");
+
+			var planeGeometry = new THREE.PlaneGeometry(9, 9, 45, 45);
+
+			uniforms = {
+				amplitude: { type: 'f', value: 0},
+				texImage: { type: 't', value: texture}
+			};
+
+			var attributes = {
+				displacement: {
+					type: 'f',
+					value: []
+				}
+			};
+
+			var verts = planeGeometry.vertices;
+			var values = attributes.displacement.value;
+
+			for (var y = 0; y < 46; y ++) {
+				for (var x = 0; x < 46; x ++) {
+					var sVal = Math.sin((((x / 0.5) * 40.0) / 360.0) * Math.PI * 2.0);
+					var index = x + 46 * y;
+					values[index] = sVal;
+				}
+			}
+
+			var vs = document.getElementById("vertexShader").textContent;
+			var fs = document.getElementById("fragmentShader").textContent;
+
+			var shaderMaretial = new THREE.ShaderMaterial({
+				uniforms: uniforms,
+				attributes: attributes,
+				side: THREE.DoubleSide,
+				vertexShader: vs,
+				fragmentShader: fs
+			});
+
+			var mesh = new THREE.Mesh( planeGeomerty, shaderMaterial);
+
+			nScene.addToScene(mesh);
+		}
+
+		function animateScene() {
+			requestAnimationFrame(animateScene);
+
+			uniforms.amplitudee = Math.sin(frameCounter);
+
+			frameCounter += 0.1;
+
+			nScene.renderScene();
+		}
+
+	</script>
+
+</body>
+</html>
